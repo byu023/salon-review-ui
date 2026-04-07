@@ -15,7 +15,7 @@ function App() {
     setCopied(false);
 
     try {
-      const response = await fetch("http://127.0.0.1:5000/api/generate-reply", {
+      const response = await fetch("https://salon-review-api.onrender.com/api/generate-reply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ review }),
