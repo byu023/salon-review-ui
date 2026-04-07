@@ -1,11 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "./supabase";
+import Auth from "./Auth";
 
 function App() {
+  const [session, setSession] = useState(null);
   const [review, setReview] = useState("");
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleGenerate = async () => {
     if (!review.trim()) return;
@@ -20,9 +33,7 @@ function App() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ review }),
       });
-
       if (!response.ok) throw new Error("サーバーエラーが発生しました");
-
       const data = await response.json();
       setReply(data.reply);
     } catch (err) {
@@ -38,6 +49,12 @@ function App() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (!session) return <Auth />;
+
   return (
     <div style={{ fontFamily: "'Hiragino Sans', 'Noto Sans JP', sans-serif" }}
       className="min-h-screen bg-rose-50 py-12 px-4">
@@ -49,6 +66,12 @@ function App() {
           <p className="text-gray-500 text-sm">
             口コミを貼り付けて、返信文をAIが自動生成します
           </p>
+          <button
+            onClick={handleLogout}
+            className="mt-2 text-xs text-gray-400 hover:text-gray-600 underline"
+          >
+            ログアウト
+          </button>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
