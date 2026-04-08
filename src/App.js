@@ -2,11 +2,15 @@ import { useState, useEffect } from "react";
 import { supabase } from "./supabase";
 import Auth from "./Auth";
 
+const API_URL = "https://salon-review-api.onrender.com";
+
 function App() {
   const [session, setSession] = useState(null);
+  const [isActive, setIsActive] = useState(false);
   const [review, setReview] = useState("");
   const [reply, setReply] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
@@ -20,6 +24,42 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (!session) return;
+    checkSubscription();
+  }, [session]);
+
+  const checkSubscription = async () => {
+    setChecking(true);
+    try {
+      const res = await fetch(`${API_URL}/api/check-subscription`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: session.user.email }),
+      });
+      const data = await res.json();
+      setIsActive(data.active);
+    } catch {
+      setIsActive(false);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleSubscribe = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/create-checkout-session`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: session.user.email }),
+      });
+      const data = await res.json();
+      window.location.href = data.url;
+    } catch {
+      setError("決済ページへの遷移に失敗しました");
+    }
+  };
+
   const handleGenerate = async () => {
     if (!review.trim()) return;
     setLoading(true);
@@ -28,7 +68,7 @@ function App() {
     setCopied(false);
 
     try {
-      const response = await fetch("https://salon-review-api.onrender.com/api/generate-reply", {
+      const response = await fetch(`${API_URL}/api/generate-reply`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ review }),
@@ -55,6 +95,48 @@ function App() {
 
   if (!session) return <Auth />;
 
+  if (checking) {
+    return (
+      <div className="min-h-screen bg-rose-50 flex items-center justify-center">
+        <p className="text-gray-500 text-sm">読み込み中...</p>
+      </div>
+    );
+  }
+
+  if (!isActive) {
+    return (
+      <div style={{ fontFamily: "'Hiragino Sans', 'Noto Sans JP', sans-serif" }}
+        className="min-h-screen bg-rose-50 py-12 px-4">
+        <div className="max-w-sm mx-auto text-center">
+          <h1 className="text-3xl font-bold text-rose-600 mb-2">
+            💬 口コミ返信ジェネレーター
+          </h1>
+          <p className="text-gray-500 text-sm mb-10">
+            サブスクリプションに登録して使い始めましょう
+          </p>
+          <div className="bg-white rounded-2xl shadow-sm p-6 mb-4">
+            <p className="text-2xl font-bold text-gray-800 mb-1">¥3,000 <span className="text-sm font-normal text-gray-500">/ 月</span></p>
+            <p className="text-sm text-gray-500 mb-6">いつでも解約可能</p>
+            <ul className="text-sm text-gray-600 text-left mb-6 space-y-2">
+              <li>✅ 口コミ返信文をAIが自動生成</li>
+              <li>✅ 生成回数無制限</li>
+              <li>✅ 編集してそのままコピー</li>
+            </ul>
+            <button
+              onClick={handleSubscribe}
+              className="w-full bg-rose-500 hover:bg-rose-600 text-white font-medium py-3 rounded-xl transition text-sm"
+            >
+              今すぐ始める
+            </button>
+          </div>
+          <button onClick={handleLogout} className="text-xs text-gray-400 hover:text-gray-600 underline">
+            ログアウト
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ fontFamily: "'Hiragino Sans', 'Noto Sans JP', sans-serif" }}
       className="min-h-screen bg-rose-50 py-12 px-4">
@@ -66,10 +148,7 @@ function App() {
           <p className="text-gray-500 text-sm">
             口コミを貼り付けて、返信文をAIが自動生成します
           </p>
-          <button
-            onClick={handleLogout}
-            className="mt-2 text-xs text-gray-400 hover:text-gray-600 underline"
-          >
+          <button onClick={handleLogout} className="mt-2 text-xs text-gray-400 hover:text-gray-600 underline">
             ログアウト
           </button>
         </div>
