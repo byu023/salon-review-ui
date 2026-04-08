@@ -27,6 +27,7 @@ function App() {
   useEffect(() => {
     if (!session) return;
     checkSubscription();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const checkSubscription = async () => {
