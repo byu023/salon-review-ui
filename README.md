@@ -1,70 +1,109 @@
-# Getting Started with Create React App
+# salon-review-tool
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+美容サロン向けの口コミ返信サポートツールです。HotPepper Beauty の口コミを自動収集し、Claude API で返信文の下書きを生成、ブラウザ上で確認できます。
 
-## Available Scripts
+## 概要
 
-In the project directory, you can run:
+サロン運営者が抱える「口コミへの返信が追いつかない」「毎回文面を考えるのが大変」という課題を解決するために作成しました。Selenium で口コミを収集し、Anthropic Claude API に渡して、サロンのトーンに合わせた返信案を自動生成します。
 
-### `npm start`
+> **注意:** 本ツールは返信文を**自動投稿するものではありません**。HotPepper Beauty の利用規約に配慮し、生成した返信案はあくまで下書きとして確認・編集する運用を想定しています。
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 主な機能
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- HotPepper Beauty の指定サロンページから口コミを収集(Selenium)
+- 収集した口コミを Claude API に渡して返信文の下書きを生成
+- Flask バックエンド + React/Tailwind フロントエンドで一覧表示
+- 口コミ本文とAI生成の返信案を並べて確認可能
 
-### `npm test`
+## 使用技術
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+| 領域 | 技術 |
+|------|------|
+| スクレイピング | Python, Selenium |
+| AI 返信生成 | Anthropic Claude API (`anthropic` パッケージ) |
+| バックエンド | Flask |
+| フロントエンド | React, Tailwind CSS |
+| 環境変数管理 | python-dotenv |
 
-### `npm run build`
+## ディレクトリ構成
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+```
+salon-review-tool/
+├── backend/
+│   ├── app.py              # Flask エントリーポイント
+│   ├── scraper.py          # Selenium スクレイパー
+│   ├── ai_reply.py         # Claude API 呼び出し
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   └── package.json
+├── .env.example
+└── README.md
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## セットアップ
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+### 前提
 
-### `npm run eject`
+- Python 3.10 以上
+- Node.js 18 以上
+- Google Chrome(Selenium 用)
+- Anthropic API キー
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### バックエンド
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+`.env` ファイルを作成し、API キーを設定します。
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```
+ANTHROPIC_API_KEY=your_api_key_here
+```
 
-## Learn More
+起動:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+python app.py
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### フロントエンド
 
-### Code Splitting
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 使い方
 
-### Analyzing the Bundle Size
+1. バックエンドとフロントエンドを起動
+2. ブラウザで `http://localhost:5173`(など)にアクセス
+3. 対象サロンのURLを入力して口コミを取得
+4. 各口コミに対して生成された返信案を確認
+5. 必要に応じて編集し、実際の返信時の参考にする
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## 工夫したポイント
 
-### Making a Progressive Web App
+- **プロンプト設計**: サロンのトーン(丁寧・親しみやすい)を指定できるよう、プロンプトに変数を持たせた
+- **エラーハンドリング**: スクレイピング時の要素取得失敗や API エラーを個別に処理し、1件の失敗で全体が止まらないようにした
+- **責任ある設計**: 自動投稿機能はあえて実装せず、あくまで人間の確認を前提とした下書き生成ツールとして設計
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## 今後の拡張予定
 
-### Advanced Configuration
+- Google マップの口コミ対応
+- 複数店舗の一括管理
+- 返信トーンのカスタマイズUI
+- CSV エクスポート機能
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## ライセンス
 
-### Deployment
+個人ポートフォリオ用途。商用利用時は HotPepper Beauty の利用規約を確認してください。
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 作者
 
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+和史 — Python 開発者(フリーランス活動中)
